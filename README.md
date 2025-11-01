@@ -186,7 +186,6 @@ This single command will:
    // Now edit the following lines:
    OPENROUTER_API_KEY=your_openrouter_api_key_here
    OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
-   EOF
    ```
    
    Replace `your_openrouter_api_key_here` with your actual OpenRouter API key.
