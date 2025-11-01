@@ -178,9 +178,12 @@ This single command will:
    cd contract_intelligence_sysytem
    ```
 
-2. **Create `.env` file** in the root directory:
+2. **Copy `.env.example` file** as `.env` and edit the following lines:
    ```bash
-   cat > .env << EOF
+   //For copying the file
+   cp .env.example .env
+
+   // Now edit the following lines:
    OPENROUTER_API_KEY=your_openrouter_api_key_here
    OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
    EOF
