@@ -174,7 +174,7 @@ This single command will:
 
 1. **Clone the repository**
    ```bash
-   git clone <https://github.com/shreyap2702/contract_intelligence_system>
+   git clone https://github.com/shreyap2702/contract_intelligence_system
    cd contract_intelligence_sysytem
    ```
 
