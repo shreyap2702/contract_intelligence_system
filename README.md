@@ -2,6 +2,8 @@
 
 An automated contract intelligence system for accounts receivable SaaS platforms. This system processes PDF contracts, extracts critical financial and operational data using LLM-powered parsing, and provides completeness scores with gap analysis.
 
+Demo video: https://drive.google.com/file/d/1_ka3gTQiAN0PjGkEHNzFywHJfnSIzIBZ/view?usp=sharing
+
 ## System Architecture
 
 The system consists of multiple services running in Docker containers:
