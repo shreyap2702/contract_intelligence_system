@@ -6,9 +6,10 @@ import logging
 import time
 from datetime import datetime
 from celery import Celery
+from celery.signals import worker_ready, worker_shutdown
 
 from app.config import settings
-from app.database import get_contracts_collection
+from app.database import get_contracts_collection, connect_to_mongo, close_mongo_connection
 from app.services.parser import contract_parser
 from app.services.scoring import scoring_service
 from app.models import ProcessingStatus
@@ -35,6 +36,35 @@ celery_app.conf.update(
 )
 
 
+@worker_ready.connect
+def worker_ready_handler(sender=None, **kwargs):
+    """
+    Connect to MongoDB when Celery worker is ready
+    This ensures database connection is established before processing tasks
+    """
+    logger.info("Celery worker ready - connecting to MongoDB...")
+    try:
+        connect_to_mongo()
+        logger.info("MongoDB connection established in Celery worker")
+    except Exception as e:
+        logger.error(f"Failed to connect to MongoDB in Celery worker: {e}")
+        # Don't raise - allow worker to start and retry on task execution
+        pass
+
+
+@worker_shutdown.connect
+def worker_shutdown_handler(sender=None, **kwargs):
+    """
+    Close MongoDB connection when Celery worker shuts down
+    """
+    logger.info("Celery worker shutting down - closing MongoDB connection...")
+    try:
+        close_mongo_connection()
+        logger.info("MongoDB connection closed in Celery worker")
+    except Exception as e:
+        logger.warning(f"Error closing MongoDB connection in Celery worker: {e}")
+
+
 @celery_app.task(bind=True, name='tasks.process_contract', max_retries=2)
 def process_contract(self, contract_id: str, file_path: str) -> dict:
     """
@@ -48,6 +78,10 @@ def process_contract(self, contract_id: str, file_path: str) -> dict:
         Processing result dictionary
     """
     start_time = time.time()
+    
+    # Ensure MongoDB connection is established in Celery worker
+    # (Celery runs in separate container and doesn't share FastAPI's connection)
+    connect_to_mongo()
     contracts = get_contracts_collection()
     
     try:
@@ -152,19 +186,24 @@ def process_contract(self, contract_id: str, file_path: str) -> dict:
         
         processing_time = time.time() - start_time
         
-        # Update database with error
-        contracts.update_one(
-            {"contract_id": contract_id},
-            {
-                "$set": {
-                    "status": ProcessingStatus.FAILED.value,
-                    "progress": 0,
-                    "error_message": str(e),
-                    "processing_end_date": datetime.utcnow(),
-                    "processing_time_seconds": processing_time
+        # Update database with error (ensure connection exists)
+        try:
+            connect_to_mongo()
+            contracts = get_contracts_collection()
+            contracts.update_one(
+                {"contract_id": contract_id},
+                {
+                    "$set": {
+                        "status": ProcessingStatus.FAILED.value,
+                        "progress": 0,
+                        "error_message": str(e),
+                        "processing_end_date": datetime.utcnow(),
+                        "processing_time_seconds": processing_time
+                    }
                 }
-            }
-        )
+            )
+        except Exception as db_error:
+            logger.error(f"Failed to update database with error status: {db_error}")
         
         # Retry if not at max retries
         if self.request.retries < self.max_retries:

@@ -4,6 +4,7 @@ Loads and manages all application settings from environment variables
 """
 
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from functools import lru_cache
 from typing import Literal
 
@@ -29,12 +30,9 @@ class Settings(BaseSettings):
     upload_dir: str = "./uploads"
     max_file_size: int = 52428800  # 50MB in bytes
     
-    # LLM Configuration
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4-turbo-preview"
-    anthropic_api_key: str = ""
-    anthropic_model: str = "claude-3-sonnet-20240229"
-    llm_provider: Literal["openai", "anthropic"] = "openai"
+    # LLM Configuration (OpenRouter only)
+    openrouter_api_key: str = ""
+    openrouter_model: str = "anthropic/claude-3.5-sonnet"
     
     # Celery Configuration
     celery_broker_url: str = "redis://localhost:6379/0"
@@ -50,8 +48,11 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        env_file_encoding = 'utf-8'
         case_sensitive = False
-
+        extra = "ignore"
+        validate_default = False
+        env_ignore_empty = True
 
 @lru_cache()
 def get_settings() -> Settings:

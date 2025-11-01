@@ -4,7 +4,7 @@ Calculates completeness scores and identifies missing fields
 """
 
 import logging
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 from app.models import (
     ScoreBreakdown, PartyInfo, AccountInfo, FinancialDetails,
     PaymentStructure, RevenueClassification, SLA

@@ -21,9 +21,21 @@ _database: Optional[Database] = None
 def connect_to_mongo() -> None:
     """
     Establish connection to MongoDB and create indexes
-    Called during application startup
+    Called during application startup or in Celery workers
     """
     global _client, _database
+    
+    # If already connected, verify connection is still alive
+    if _client is not None and _database is not None:
+        try:
+            _client.admin.command('ping')
+            logger.debug("MongoDB connection already established")
+            return
+        except Exception:
+            # Connection is dead, reconnect
+            logger.warning("MongoDB connection lost, reconnecting...")
+            _client = None
+            _database = None
     
     try:
         logger.info(f"Connecting to MongoDB at {settings.mongodb_url}")

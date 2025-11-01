@@ -9,7 +9,6 @@ import pdfplumber
 from pathlib import Path
 from typing import Dict, Any, Optional
 from openai import OpenAI
-from anthropic import Anthropic
 
 from app.config import settings
 from app.models import (
@@ -24,13 +23,12 @@ class ContractParser:
     """Service for parsing contract documents"""
     
     def __init__(self):
-        self.llm_provider = settings.llm_provider
-        if self.llm_provider == "openai":
-            self.client = OpenAI(api_key=settings.openai_api_key)
-            self.model = settings.openai_model
-        else:
-            self.client = Anthropic(api_key=settings.anthropic_api_key)
-            self.model = settings.anthropic_model
+        # OpenRouter uses OpenAI-compatible API
+        self.client = OpenAI(
+            api_key=settings.openrouter_api_key,
+            base_url="https://openrouter.ai/api/v1"
+        )
+        self.model = settings.openrouter_model
     
     def extract_text_from_pdf(self, file_path: str) -> str:
         """
@@ -216,29 +214,18 @@ Return ONLY the JSON object, no additional text or explanation."""
         """
         for attempt in range(max_retries):
             try:
-                logger.info(f"Calling {self.llm_provider} API (attempt {attempt + 1}/{max_retries})")
+                logger.info(f"Calling OpenRouter API (attempt {attempt + 1}/{max_retries})")
                 
-                if self.llm_provider == "openai":
-                    response = self.client.chat.completions.create(
-                        model=self.model,
-                        messages=[
-                            {"role": "system", "content": "You are a contract analysis expert. Extract information and return only valid JSON."},
-                            {"role": "user", "content": prompt}
-                        ],
-                        temperature=0.1,
-                        response_format={"type": "json_object"}
-                    )
-                    content = response.choices[0].message.content
-                else:  # anthropic
-                    response = self.client.messages.create(
-                        model=self.model,
-                        max_tokens=4096,
-                        temperature=0.1,
-                        messages=[
-                            {"role": "user", "content": prompt}
-                        ]
-                    )
-                    content = response.content[0].text
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a contract analysis expert. Extract information and return only valid JSON."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.1,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
                 
                 # Parse JSON response
                 parsed_data = json.loads(content)
