@@ -149,21 +149,46 @@ contract_intelligence_sysytem/
 - Docker Compose 2.0 or later
 - OpenRouter API key (get one at https://openrouter.ai)
 
+### Run Everything with Docker
+
+**Main command to start all services:**
+
+```bash
+docker-compose up --build
+```
+
+Or run in background (detached mode):
+
+```bash
+docker-compose up --build -d
+```
+
+This single command will:
+- Build Docker images for backend and frontend
+- Pull MongoDB and Redis images
+- Start all 5 services (mongodb, redis, app, celery, frontend)
+- Wait for dependencies to be healthy
+- Make everything available at the configured ports
+
 ### Setup Steps
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone <https://github.com/shreyap2702/contract_intelligence_system>
    cd contract_intelligence_sysytem
    ```
 
-2. **Create `.env` file**
-   ```env
+2. **Create `.env` file** in the root directory:
+   ```bash
+   cat > .env << EOF
    OPENROUTER_API_KEY=your_openrouter_api_key_here
    OPENROUTER_MODEL=anthropic/claude-3.5-sonnet
+   EOF
    ```
+   
+   Replace `your_openrouter_api_key_here` with your actual OpenRouter API key.
 
-3. **Start all services**
+3. **Run the Docker command:**
    ```bash
    docker-compose up --build
    ```
@@ -172,67 +197,14 @@ contract_intelligence_sysytem/
    - API: http://localhost:8000
    - API Docs: http://localhost:8000/docs
    - Frontend: http://localhost:3000
+   - Health Check: http://localhost:8000/health
 
-## Local Development Setup
-
-For development without Docker, run services individually.
-
-### Backend Setup
-
-1. **Create virtual environment**
+5. **Verify all services are running:**
    ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   docker-compose ps
    ```
 
-2. **Install dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Start MongoDB and Redis** (using Docker)
-   ```bash
-   docker-compose up mongodb redis -d
-   ```
-
-4. **Set environment variables**
-   Create a `.env` file or export variables:
-   ```bash
-   export OPENROUTER_API_KEY=your_openrouter_api_key
-   export MONGODB_URL=mongodb://localhost:27017
-   export REDIS_URL=redis://localhost:6379/0
-   export CELERY_BROKER_URL=redis://localhost:6379/0
-   export CELERY_RESULT_BACKEND=redis://localhost:6379/0
-   ```
-
-5. **Start the API server**
-   ```bash
-   uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-   ```
-
-6. **Start Celery worker** (in a separate terminal)
-   ```bash
-   celery -A app.tasks.celery_tasks.celery_app worker --loglevel=info
-   ```
-
-### Frontend Setup
-
-1. **Navigate to frontend directory**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start development server**
-   ```bash
-   npm run dev
-   ```
-
-The frontend will be available at http://localhost:3000
+All services should show as "Up" or "healthy".
 
 ## Environment Variables
 
@@ -247,3 +219,23 @@ The frontend will be available at http://localhost:3000
 - `OPENROUTER_MODEL`: Model to use for parsing (default: `anthropic/claude-3.5-sonnet`)
 
 In Docker, the compose file automatically sets these to use Docker service names (`mongodb://mongodb:27017`, `redis://redis:6379/0`).
+
+## Screenshots
+
+Below are sample views from the frontend dashboard and Docker environment.
+
+### Dashboard Views
+
+<p align="center">
+  <img src="./dashboard.png" alt="Dashboard" width="80%" style="margin-bottom: 15px;" /> <br>
+  <img src="./dashboard1.png" alt="Dashboard 1" width="80%" style="margin-bottom: 15px;" /> <br>
+  <img src="./dashboard2.png" alt="Dashboard 2" width="80%" style="margin-bottom: 15px;" /> <br>
+  <img src="./dashboard3.png" alt="Dashboard 3" width="80%" style="margin-bottom: 15px;" />
+</p>
+
+### Docker Dashboard
+
+<p align="center">
+  <img src="./docker_dashboard.png" alt="Docker Dashboard" width="80%" />
+</p>
+
